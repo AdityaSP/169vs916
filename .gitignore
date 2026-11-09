@@ -1,0 +1,9 @@
+# Videos are large and may be confidential: keep the folder, not its contents
+media/*
+!media/.gitkeep
+
+# Local editor / tool state
+.claude/settings.local.json
+.DS_Store
+node_modules/
+*.log

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Dual Video Review</title>
+<script>
+  // Apply a saved theme before first paint to avoid a flash.
+  try { var t = localStorage.getItem('vr:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="12" height="8" rx="1.5"/><rect x="16" y="4" width="6" height="12" rx="1.5"/><path d="M4 19h16"/></svg>
+      </span>
+      <h1>Dual Video Review</h1>
+    </div>
+    <div class="top-actions">
+      <button id="videosBtn" class="btn pairbtn" type="button" aria-expanded="true" aria-controls="loaderPanel" title="Show or hide the video path inputs">
+        <span id="pairLabel">Choose videos</span>
+        <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <button id="themeBtn" class="btn ghost" type="button" title="Switch theme (auto / light / dark)">
+        <span id="themeIcon" aria-hidden="true"></span><span id="themeLabel">Auto</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="fileBanner" class="alert warn" hidden>
+    This page is opened from <code>file:</code>. Serve the folder over HTTP
+    (for example <code>python3 -m http.server</code>) and open it from
+    <code>http://localhost:8000/</code>.
+  </div>
+
+  <section id="loaderPanel" class="card loader" aria-labelledby="loadTitle">
+    <h2 id="loadTitle" class="card-title">Choose the videos</h2>
+    <form id="loadForm" autocomplete="off">
+      <div class="fields">
+        <div class="field">
+          <label for="pathA">Video A path</label>
+          <input id="pathA" type="text" placeholder="media/clip_16x9.mp4" spellcheck="false">
+          <span id="errA" class="err" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="pathB">Video B path</label>
+          <input id="pathB" type="text" placeholder="media/clip_9x16.mp4" spellcheck="false">
+          <span id="errB" class="err" role="alert"></span>
+        </div>
+        <button id="loadBtn" class="btn primary" type="submit">Load videos</button>
+      </div>
+      <p class="hint">Paths are relative to this page. Either order works &mdash; the landscape video is always shown on the left.</p>
+    </form>
+    <div id="recentsWrap" class="recents" hidden>
+      <span class="muted">Recent</span>
+      <span id="recents" class="chips"></span>
+    </div>
+  </section>
+
+  <div id="warn" class="alerts" aria-live="polite"></div>
+  <div id="status" class="status" aria-live="polite"></div>
+
+  <div class="workspace">
+  <div class="main-col">
+  <section id="stage" class="panes" aria-label="Videos">
+    <article id="wrapA" class="pane empty">
+      <header class="pane-head">
+        <span class="tag">A</span>
+        <div class="pane-title">
+          <strong id="roleA">Video A</strong>
+          <span id="nameA" class="fname">Not loaded</span>
+        </div>
+        <button id="audioA" class="audio-btn" type="button" disabled aria-pressed="false"></button>
+      </header>
+      <div class="video-box">
+        <video id="vidA" preload="auto" playsinline muted></video>
+        <div class="placeholder">No video loaded</div>
+      </div>
+      <footer class="pane-foot">
+        <span id="resA" class="chip">&mdash;</span>
+        <span id="durA" class="chip">&mdash;</span>
+        <span class="foot-break" aria-hidden="true"></span>
+        <span id="frmA" class="chip frame" title="Frame number of the picture on screen (starts at 0)">Frame &mdash;</span>
+      </footer>
+    </article>
+
+    <article id="wrapB" class="pane empty">
+      <header class="pane-head">
+        <span class="tag">B</span>
+        <div class="pane-title">
+          <strong id="roleB">Video B</strong>
+          <span id="nameB" class="fname">Not loaded</span>
+        </div>
+        <button id="audioB" class="audio-btn" type="button" disabled aria-pressed="false"></button>
+      </header>
+      <div class="video-box">
+        <video id="vidB" preload="auto" playsinline muted></video>
+        <div class="placeholder">No video loaded</div>
+      </div>
+      <footer class="pane-foot">
+        <span id="resB" class="chip">&mdash;</span>
+        <span id="durB" class="chip">&mdash;</span>
+        <span class="foot-break" aria-hidden="true"></span>
+        <span id="frmB" class="chip frame" title="Frame number of the picture on screen (starts at 0)">Frame &mdash;</span>
+      </footer>
+    </article>
+  </section>
+
+  <section class="card transport" aria-label="Playback controls">
+    <button id="playBtn" class="play" type="button" disabled aria-label="Play"></button>
+    <div class="timeline">
+      <div class="barwrap">
+        <div id="markers" class="markers"></div>
+        <input id="bar" type="range" min="0" max="1" step="any" value="0" disabled aria-label="Progress">
+      </div>
+      <div class="timeline-foot">
+        <span id="timeLabel" class="time">0:00.0 / 0:00.0</span>
+        <span id="tlNote" class="tl-note"></span>
+      </div>
+    </div>
+    <label class="speed">
+      <span>Speed</span>
+      <select id="speedSel" aria-label="Playback speed">
+        <option value="0.25">0.25&times;</option>
+        <option value="0.5">0.5&times;</option>
+        <option value="0.75">0.75&times;</option>
+        <option value="1" selected>1&times;</option>
+        <option value="1.25">1.25&times;</option>
+        <option value="1.5">1.5&times;</option>
+        <option value="2">2&times;</option>
+      </select>
+    </label>
+  </section>
+
+  </div>
+
+  <aside class="side-col">
+  <section class="card findings" aria-labelledby="findTitle">
+    <div class="findings-head">
+      <h2 id="findTitle" class="card-title">Findings <span id="count" class="count">0</span></h2>
+      <div class="export-row">
+        <button id="exportBtn" class="btn small" type="button" disabled>Export JSON</button>
+        <button id="exportAllBtn" class="btn small" type="button">Export all</button>
+        <button id="importBtn" class="btn small" type="button" title="Load a file exported by this tool: opens its videos and restores its findings">Import</button>
+        <input id="importFile" type="file" accept=".json,application/json" aria-label="Import findings file" hidden>
+      </div>
+    </div>
+    <button id="markBtn" class="btn primary mark" type="button" disabled>&#9679; Start finding</button>
+    <div id="openInfo" class="alert info" aria-live="polite"></div>
+    <ol id="list" class="list"></ol>
+    <div id="empty" class="empty-state">
+      <strong>No findings yet.</strong>
+      <span>Move to a spot where the videos differ and click <em>Start finding</em> (it also plays the videos). Click <em>Stop finding</em> where it ends (it also pauses them); both times are recorded exactly where you click. Newest findings appear at the top; click one to replay it from 2 s before its start.</span>
+    </div>
+    <p class="tip">Tip: press <kbd>Space</kbd> to play or pause.</p>
+  </section>
+  </aside>
+  </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
